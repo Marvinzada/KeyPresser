@@ -1,8 +1,10 @@
-A simple yet powerful GUI application for automating keyboard presses, built with Python and Tkinter. Made by Marvinzada.
+A GUI application for automating keyboard presses, built with Python and Tkinter.
+
+![App Screenshot](app.png)
 
 ---
 
-## How to Compile and Run from Source
+## How to Compile
 
 Follow these steps to create the `.exe` file yourself.
 
