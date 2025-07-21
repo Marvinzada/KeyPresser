@@ -1,8 +1,10 @@
-A simple yet powerful GUI application for automating keyboard presses, built with Python and Tkinter. Made by Marvinzada.
+A GUI application for automating keyboard presses, built with Python and Tkinter.
+
+![App Screenshot](app.png)
 
 ---
 
-## How to Compile and Run from Source
+## How to Compile
 
 Follow these steps to create the `.exe` file yourself.
 
@@ -35,7 +37,7 @@ pyinstaller --onefile --windowed --name KeyPresser --icon=icon.ico --add-data "g
 ```
 
 ### 5. Run the Application
-The final AutoPresserPro.exe will be located in the dist folder.
+The final KeyPresser.exe will be located in the dist folder.
 
 
 ### License
