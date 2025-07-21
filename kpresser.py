@@ -25,7 +25,7 @@ class AutoPresserApp:
     def __init__(self, root):
         self.root = root
         self.root.title("KeyPresser")
-        self.root.geometry("420x380")
+        self.root.geometry("420x350") # Reduzimos a altura pois o botão foi removido
         
         # Icone
         try:
@@ -33,13 +33,13 @@ class AutoPresserApp:
             icon_path = os.path.join(base_path, 'icon.ico')
             self.root.iconbitmap(icon_path)
         except Exception as e:
-            print(f"Could not load window icon: {e}") # Continua se o ícone não for encontrado
+            print(f"Could not load window icon: {e}")
 
         self.root.resizable(False, False)
 
         self.is_running = False
         self.press_thread = None
-        self.current_hotkey = None
+        self.current_hotkey_ref = None # Renomeado para clareza
 
         style = ttk.Style(self.root)
         style.theme_use('clam')
@@ -72,20 +72,20 @@ class AutoPresserApp:
         self.hotkey_var = tk.StringVar(value='f6')
         self.hotkey_combo = ttk.Combobox(main_frame, textvariable=self.hotkey_var, values=hotkey_options, state='readonly')
         self.hotkey_combo.grid(row=2, column=1, columnspan=2, sticky="ew", padx=5)
+        
+        # ### MUDANÇA #1: O botão foi removido ###
+        
+        # ### MUDANÇA #2: Aciona a função setup_hotkey quando um novo item é selecionado ###
+        self.hotkey_combo.bind("<<ComboboxSelected>>", self.setup_hotkey)
 
-        self.set_hotkey_button = ttk.Button(main_frame, text="Set Hotkey & Lock Config", command=self.setup_hotkey)
-        self.set_hotkey_button.grid(row=3, column=0, columnspan=3, pady=(15, 10), sticky="ew", padx=5)
-
-        self.status_label = ttk.Label(main_frame, text="Status: Click 'Set Hotkey' to begin", font=("Segoe UI", 10, "bold"), anchor="center")
-        self.status_label.grid(row=4, column=0, columnspan=3, pady=10)
+        # ### MUDANÇA #3: Texto de status ajustado ###
+        self.status_label = ttk.Label(main_frame, text="Status: Ready", font=("Segoe UI", 10, "bold"), anchor="center")
+        self.status_label.grid(row=3, column=0, columnspan=3, pady=(25, 10)) # Ajustado o posicionamento (row)
         
         footer_content = ttk.Frame(footer_frame)
         footer_content.pack()
         
-        # Rodapé
         github_url = "https://github.com/Marvinzada"
-
-        # GitHub
         try:
             logo_path = os.path.join(base_path, 'github_logo.png')
             self.github_logo_img = Image.open(logo_path).convert("RGBA")
@@ -93,18 +93,17 @@ class AutoPresserApp:
             logo_label = ttk.Label(footer_content, image=self.github_logo_icon, cursor="hand2")
             logo_label.image = self.github_logo_icon
             logo_label.pack(side="left", padx=(5, 0))
-            logo_label.bind("<Button-1>", lambda e: self.open_link(github_url)) # Ação de clique
+            logo_label.bind("<Button-1>", lambda e: self.open_link(github_url))
         except Exception as e:
             print(f"Could not load logo: {e}")
             
         copyright_label = ttk.Label(footer_content, text="Made by Marvinzada", cursor="hand2")
         copyright_label.pack(side="left")
-        copyright_label.bind("<Button-1>", lambda e: self.open_link(github_url)) # Ação de clique
+        copyright_label.bind("<Button-1>", lambda e: self.open_link(github_url))
         
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.setup_hotkey()
 
-    # Abrir o link
     def open_link(self, url):
         webbrowser.open_new_tab(url)
 
@@ -121,13 +120,21 @@ class AutoPresserApp:
         except ValueError: self.speed_entry.delete(0, tk.END); self.speed_entry.insert(0, str(self.speed_var.get()))
         self.root.focus()
 
-    def setup_hotkey(self):
+    def setup_hotkey(self, event=None): # Adicionado 'event=None' para compatibilidade com o .bind()
+        """Remove a hotkey antiga e registra a nova selecionada no dropdown."""
         try:
-            if self.current_hotkey: keyboard.remove_hotkey(self.current_hotkey)
+            # Remove a referência da hotkey anterior para evitar duplicatas
+            if self.current_hotkey_ref:
+                keyboard.remove_hotkey(self.current_hotkey_ref)
+
             hotkey = self.hotkey_var.get()
-            self.current_hotkey = keyboard.add_hotkey(hotkey, self.toggle_pressing)
+            # Adiciona a nova hotkey e guarda a referência para poder removê-la depois
+            self.current_hotkey_ref = keyboard.add_hotkey(hotkey, self.toggle_pressing)
+            
             self.status_label.config(text=f"Status: Ready! Press '{hotkey}' to start.")
-        except Exception as e: self.status_label.config(text=f"Error setting hotkey: {e}")
+            self.root.focus() # Tira o foco do dropdown para a hotkey funcionar
+        except Exception as e:
+            self.status_label.config(text=f"Error setting hotkey: {e}")
 
     def toggle_pressing(self):
         self.is_running = not self.is_running
@@ -146,7 +153,6 @@ class AutoPresserApp:
         self.speed_scale.config(state=entry_state)
         self.speed_entry.config(state=entry_state)
         self.hotkey_combo.config(state=state)
-        self.set_hotkey_button.config(state=entry_state)
 
     def press_key_loop(self):
         key_to_press = self.key_to_press_var.get()
@@ -163,7 +169,8 @@ class AutoPresserApp:
 
     def on_closing(self):
         self.is_running = False
-        if self.current_hotkey: keyboard.remove_hotkey(self.current_hotkey)
+        # Usa remove_all_hotkeys para garantir que tudo seja limpo ao fechar
+        keyboard.remove_all_hotkeys()
         self.root.destroy()
 
 if __name__ == "__main__":
