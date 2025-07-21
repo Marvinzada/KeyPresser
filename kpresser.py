@@ -8,7 +8,6 @@ import os
 import sys
 import webbrowser
 
-# Lista de Teclas
 UPPERCASE_KEYS = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
 LOWERCASE_AND_SPECIAL_KEYS = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -16,18 +15,20 @@ LOWERCASE_AND_SPECIAL_KEYS = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'enter', 'space', 'tab', 'esc', 'backspace', 'delete',
     'up', 'down', 'left', 'right',
-    'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12',
     'ctrl', 'alt', 'shift', 'win'
 ]
 KEY_LIST = UPPERCASE_KEYS + LOWERCASE_AND_SPECIAL_KEYS
-
-class AutoPresserApp:
+COMMAND_KEYS = [
+    'enter', 'space', 'tab', 'esc', 'backspace', 'delete',
+    'up', 'down', 'left', 'right',
+    'ctrl', 'alt', 'shift', 'win'
+]
+class KeyPresserApp:
     def __init__(self, root):
         self.root = root
         self.root.title("KeyPresser")
-        self.root.geometry("420x350") # Reduzimos a altura pois o botão foi removido
+        self.root.geometry("420x350")
         
-        # Icone
         try:
             base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
             icon_path = os.path.join(base_path, 'icon.ico')
@@ -39,7 +40,7 @@ class AutoPresserApp:
 
         self.is_running = False
         self.press_thread = None
-        self.current_hotkey_ref = None # Renomeado para clareza
+        self.current_hotkey_ref = None
 
         style = ttk.Style(self.root)
         style.theme_use('clam')
@@ -72,15 +73,10 @@ class AutoPresserApp:
         self.hotkey_var = tk.StringVar(value='f6')
         self.hotkey_combo = ttk.Combobox(main_frame, textvariable=self.hotkey_var, values=hotkey_options, state='readonly')
         self.hotkey_combo.grid(row=2, column=1, columnspan=2, sticky="ew", padx=5)
-        
-        # ### MUDANÇA #1: O botão foi removido ###
-        
-        # ### MUDANÇA #2: Aciona a função setup_hotkey quando um novo item é selecionado ###
         self.hotkey_combo.bind("<<ComboboxSelected>>", self.setup_hotkey)
 
-        # ### MUDANÇA #3: Texto de status ajustado ###
         self.status_label = ttk.Label(main_frame, text="Status: Ready", font=("Segoe UI", 10, "bold"), anchor="center")
-        self.status_label.grid(row=3, column=0, columnspan=3, pady=(25, 10)) # Ajustado o posicionamento (row)
+        self.status_label.grid(row=3, column=0, columnspan=3, pady=(25, 10))
         
         footer_content = ttk.Frame(footer_frame)
         footer_content.pack()
@@ -120,19 +116,14 @@ class AutoPresserApp:
         except ValueError: self.speed_entry.delete(0, tk.END); self.speed_entry.insert(0, str(self.speed_var.get()))
         self.root.focus()
 
-    def setup_hotkey(self, event=None): # Adicionado 'event=None' para compatibilidade com o .bind()
-        """Remove a hotkey antiga e registra a nova selecionada no dropdown."""
+    def setup_hotkey(self, event=None):
         try:
-            # Remove a referência da hotkey anterior para evitar duplicatas
             if self.current_hotkey_ref:
                 keyboard.remove_hotkey(self.current_hotkey_ref)
-
             hotkey = self.hotkey_var.get()
-            # Adiciona a nova hotkey e guarda a referência para poder removê-la depois
             self.current_hotkey_ref = keyboard.add_hotkey(hotkey, self.toggle_pressing)
-            
             self.status_label.config(text=f"Status: Ready! Press '{hotkey}' to start.")
-            self.root.focus() # Tira o foco do dropdown para a hotkey funcionar
+            self.root.focus()
         except Exception as e:
             self.status_label.config(text=f"Error setting hotkey: {e}")
 
@@ -158,7 +149,11 @@ class AutoPresserApp:
         key_to_press = self.key_to_press_var.get()
         while self.is_running:
             try:
-                keyboard.write(key_to_press)
+                if key_to_press in COMMAND_KEYS:
+                    keyboard.press_and_release(key_to_press)
+                else:
+                    keyboard.write(key_to_press)
+                
                 interval = self.speed_var.get() / 1000.0
                 time.sleep(interval)
             except Exception as e:
@@ -169,11 +164,10 @@ class AutoPresserApp:
 
     def on_closing(self):
         self.is_running = False
-        # Usa remove_all_hotkeys para garantir que tudo seja limpo ao fechar
         keyboard.remove_all_hotkeys()
         self.root.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = AutoPresserApp(root)
+    app = KeyPresserApp(root)
     root.mainloop()
