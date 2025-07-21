@@ -37,7 +37,7 @@ pyinstaller --onefile --windowed --name KeyPresser --icon=icon.ico --add-data "g
 ```
 
 ### 5. Run the Application
-The final AutoPresserPro.exe will be located in the dist folder.
+The final KeyPresser.exe will be located in the dist folder.
 
 
 ### License
